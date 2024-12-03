@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memória</title>
+    <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+    <center><strong>JOGO DA MEMÓRIA DOS ESPORTES</strong></center>
+    <br><br>
+    <canvas id="memoria" name="memoria" width="500" height="500" border="1"></canvas>
+    <br><br>
+
+    <script>
+        const cartasft = ["img/FUTEBOL.png", "img/volei.png", "img/boxe.png", "img/basquete.png", "img/surf.png", "img/atlet.png", "img/skate.png", "img/tenis.png"];
+        var cartas = [];
+        var viradas = 0; 
+        var primeiroClique = null; //null para mostrar que não houveram cliques no momento que o jogo inicia
+        var jogoFinalizado = false; //mostra que o jogo ainda não está finalizado até o momento que se finaliza no momento em que todas as cartas estão combinadas(linha 103)
+        const colunas = 4;
+        const linhas = 4;
+        const alturact = 100;
+        const larguract = 56;
+
+        window.onload = function() //onload vai carregar o jogo automaticamente ao iniciar o código
+        {
+            const canvas = document.getElementById("memoria");
+            const ctx = canvas.getContext("2d");
+
+            gerarCartas();
+
+            canvas.addEventListener('click', function(event) 
+            {
+                if (jogoFinalizado) return;
+                const x = event.offsetX;
+                const y = event.offsetY;
+                verificarClique(x, y);
+            });
+
+            desenhar();
+        };
+
+    
+        function gerarCartas() 
+        {
+            const cartastotal = linhas * colunas;
+            var cartasimg = [...cartasft, ...cartasft]; //spread(...) para duplicar as cartas
+
+            cartasimg = randomize(cartasimg); 
+            cartas = [];
+
+            for (var i = 0; i < cartastotal; i++) 
+            {
+                const carta = 
+                {
+                    imagem: cartasimg[i],
+                    x: (i % colunas) * (larguract + 10),
+                    y: Math.floor(i / colunas) * (alturact + 10),
+                    viradas: false,
+                    combinadas: false
+                };
+                cartas = [...cartas, carta];//spread para adicionar a variável cartas denro da constante carta
+            }
+        }
+
+        //embaralhar as cartas e trocar os elementos entre as linhas. Fsher yates denrto de randomize
+        function randomize(cartas) 
+        {
+            for (var p1 = cartas.length - 1; p1 > 0; p1--) 
+            {
+                const p2 = Math.floor(Math.random() * (p1 + 1));
+                [cartas[p1], cartas[p2]] = [cartas[p2], cartas[p1]]; 
+            }
+            return cartas;
+        }
+
+        function desenhar() {
+            const canvas = document.getElementById("memoria");
+            const ctx = canvas.getContext("2d");
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height); //clearect limpa o canvas antes de desenhar as cartas para evitar problemas antes de desenhar
+
+            for (var i = 0; i < cartas.length; i++) 
+            {
+                const carta = cartas[i];
+
+                if (!carta.viradas) 
+                {
+                    ctx.fillStyle = "#524656"; //faz o desenho da carta quando estiver virada para baixo
+                    ctx.fillRect(carta.x, carta.y, larguract, alturact);
+                } else {
+                    const img = new Image(); //carrega a imagem da carta quando estiver virada para cima
+                    img.src = carta.imagem;
+
+                    img.onload = function() 
+                    {
+                        ctx.drawImage(img, carta.x, carta.y, larguract, alturact);
+                    };
+                }
+            }
+
+//para verificar se a pessoa venceu(combinou todas as cartas) criamos um if com a var cartas.every(total) e tornamos verdadeiro a var jogoFinalizado
+            if (cartas.every(carta => carta.combinadas)) 
+            {
+                jogoFinalizado = true;
+                alert("Parabéns, você venceu!");
+            }
+        }
+            var bloqueio = false //variavel bloquieo para não permitir cliques em outras cartas enquanto duas já estão viradas
+            
+
+//permite com que o programa permita os cliques apenas nas cartas
+        function verificarClique(x, y) 
+        {
+
+            if (bloqueio) return; //se a carta estiver bloqueada no clique, ela não vira e não é verificada
+            for (var i = 0; i < cartas.length; i++) 
+            {
+                const carta = cartas[i];
+
+                if (x >= carta.x && x <= carta.x + larguract && y >= carta.y && y <= carta.y + alturact) 
+                {
+                    if (!carta.viradas) 
+                    {
+                        carta.viradas = true; //função que utilizamos para virar a carta ao clicar
+                        viradas++;
+
+                        if (viradas == 1) 
+                        {
+                            primeiroClique = carta;
+                            bloqueio = false
+                        }
+                        else if (viradas == 2) 
+                        {
+                            bloqueio = true;
+                            if (primeiroClique.imagem == carta.imagem) 
+                            {
+                                primeiroClique.combinadas = true;
+                                carta.combinadas = true;
+                                bloqueio = false;
+                            } 
+                            else 
+                            {
+
+//para retornar a carta na posição incial, quando ela for virada e não combinada, setTimeout.
+                                setTimeout(() => 
+                                {
+                                    primeiroClique.viradas = false;
+                                    carta.viradas = false;
+                                    bloqueio = false;
+                                    desenhar();
+                                    
+                                }, 1000);
+                            }
+                            viradas = 0;//retorna viradas = 0 para todas ficarem para baixo quandonão houver combinação
+                        }
+                    }
+                    desenhar();
+                    break;//para a ação de virada de carta
+                }
+            }
+        }
+    </script>
+</body>
+</html>
